@@ -1,0 +1,221 @@
+# Copyright 2017 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ------------------------------------------------------------------------------
+
+version: "2.1"
+
+services:
+
+  attmgr-processor:
+    container_name: attmgr-processor
+    build:
+      context: .
+      dockerfile: ./attestation_transaction_family/pyprocessor/Dockerfile
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    depends_on:
+      - validator
+    volumes:
+      - ".:/project/attestation_management/"
+
+  erp:
+    container_name: erp
+    build:
+      context: .
+      dockerfile: ./attestation_transaction_family/pyclient/Dockerfile
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    environment:
+      - 'http_proxy=${http_proxy}'
+      - 'https_proxy=${https_proxy}'
+      - 'no_proxy=rest-api,validator,${no_proxy}'
+    volumes:
+      - ".:/project/attestation_management/"
+    depends_on:
+      - rest-api
+    entrypoint: "bash -c \"sawtooth keygen --force client1 && tail -f /dev/null\""
+    stop_signal: SIGKILL
+
+  mes:
+    container_name: mes
+    build:
+      context: .
+      dockerfile: ./attestation_transaction_family/pyclient/Dockerfile
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    environment:
+      - 'http_proxy=${http_proxy}'
+      - 'https_proxy=${https_proxy}'
+      - 'no_proxy=rest-api,validator,${no_proxy}'
+    volumes:
+      - ".:/project/attestation_management/"
+    depends_on:
+      - rest-api
+    entrypoint: "bash -c \"sawtooth keygen --force client1 && tail -f /dev/null\""
+    stop_signal: SIGKILL
+
+
+  administration-client:
+    container_name: administrator-client
+    build:
+      context: .
+      dockerfile: ./administration_transaction_family/pyclient/Dockerfile
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    environment:
+      - 'http_proxy=${http_proxy}'
+      - 'https_proxy=${https_proxy}'
+      - 'no_proxy=rest-api,validator,${no_proxy}'
+    volumes:
+      - ".:/project/attestation_management/"
+    depends_on:
+      - rest-api
+    entrypoint: "bash -c \"sawtooth keygen --force admin1 && tail -f /dev/null\""
+    command: |
+      bash -c "
+        python "administration.py loadPolicyDB" && \
+        ./administration.py loadAttestationPropertiesDB && \
+        ./administration.py loadSystemConfig
+      "
+    stop_signal: SIGKILL
+
+  administration-processor:
+    container_name: administration-processor
+    build:
+      context: .
+      dockerfile: ./administration_transaction_family/pyprocessor/Dockerfile
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    depends_on:
+      - validator
+    volumes:
+      - ".:/project/attestation_management/"
+
+  subscriber:
+    container_name: subscriber
+    build:
+      context: .
+      dockerfile: ./subscriber/Dockerfile
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    environment:
+      - 'http_proxy=${http_proxy}'
+      - 'https_proxy=${https_proxy}'
+      - 'no_proxy=rest-api,validator,${no_proxy}'
+    volumes:
+      - ".:/project/attestation_management/"
+    depends_on:
+      - rest-api
+    entrypoint: "bash -c \"sawtooth keygen --force client1 && tail -f /dev/null\""
+    stop_signal: SIGKILL
+
+  settings-tp:
+    image: hyperledger/sawtooth-settings-tp:1.0
+    container_name: sawtooth-settings-tp-default
+    depends_on:
+      - validator
+    entrypoint: settings-tp -vv -C tcp://validator:4004
+
+  identity-tp:
+    image: hyperledger/sawtooth-identity-tp:latest
+    container_name: identity-tp
+    expose:
+       - 4004
+    entrypoint: identity-tp -vv  -C tcp://validator:4004
+
+  block-info-tp:
+    image: hyperledger/sawtooth-block-info-tp:latest
+    container_name: block-info-tp
+    depends_on:
+      - validator
+    command: block-info-tp -vv --connect tcp://validator:4004
+
+  validator:
+    image: hyperledger/sawtooth-validator:1.0
+    container_name: sawtooth-validator-default
+    expose:
+      - 4004
+    ports:
+      - "4004:4004"
+    # start the validator with an empty genesis batch
+   # entrypoint: "bash -c \"\
+   #     sawadm keygen && \
+   #     sawtooth keygen my_key && \
+   #     sawset genesis -k /root/.sawtooth/keys/my_key.priv && \
+   #     sawadm genesis config-genesis.batch && \
+   #     sawtooth-validator -vv \
+   #       --endpoint tcp://validator:8800 \
+   #       --bind component:tcp://eth0:4004 \
+   #       --bind network:tcp://eth0:8800  \
+   #    \""
+    volumes:
+      - ".:/project/attestation_management/"
+    command: |
+      bash -c "
+        if [ ! -f /etc/keys/validator.priv ]; then
+        sawadm keygen &&
+        sawset genesis \
+          -k /etc/sawtooth/keys/validator.priv \
+          -o config-genesis.batch &&
+        sawset proposal create \
+          -k /etc/sawtooth/keys/validator.priv \
+          sawtooth.consensus.algorithm.name=Devmode \
+          sawtooth.consensus.algorithm.version=0.1 \
+          sawtooth.validator.batch_injectors=block_info \
+          -o config.batch &&
+        sawadm genesis config-genesis.batch config.batch
+        fi;
+        sawtooth-validator -vv \
+            --endpoint tcp://validator:8800 \
+            --bind component:tcp://eth0:4004 \
+            --bind network:tcp://eth0:8800
+      "
+  rest-api:
+    image: hyperledger/sawtooth-rest-api:1.0
+    container_name: sawtooth-rest-api-default
+    ports:
+      - "8008:8008"
+    depends_on:
+      - validator
+    entrypoint: sawtooth-rest-api -C tcp://validator:4004 --bind rest-api:8008
+    command: |
+    #  bash -c "
+     # python3-pip \
+     # && pip3 install -U protobuf \
+     # "
+
+  shell:
+    image: hyperledger/sawtooth-all:1.0
+    container_name: sawtooth-shell-default
+    depends_on:
+      - rest-api
+    volumes:
+      - ".:/project/attestation_management/"
+    entrypoint: "bash -c \"\
+        sawtooth keygen && \
+        cp ~/.sawtooth/keys/* /project/attestation_management/keys/root_keys/ &&\
+        tail -f /dev/null \
+        \""

@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+message responseTQ {
+  string Result = 1;
+  string ProverID = 2;
+  string RequestorID = 3;
+  float TrustStatus= 4;
+}

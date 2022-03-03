@@ -1,0 +1,10 @@
+make microvisor.hex && make fuse4 && make flash
+make[1]: Entering directory '/home/danny/bachelorsuv/apps/remote_attest'
+make[1]: 'microvisor.hex' is up to date.
+make[1]: Leaving directory '/home/danny/bachelorsuv/apps/remote_attest'
+make[1]: Entering directory '/home/danny/bachelorsuv/apps/remote_attest'
+avrdude -p m1284p -c atmelice_isp -U lfuse:w:0xde:m -U hfuse:w:0xd3:m -U efuse:w:0xfd:m -vvv -F
+make[1]: Leaving directory '/home/danny/bachelorsuv/apps/remote_attest'
+make[1]: Entering directory '/home/danny/bachelorsuv/apps/remote_attest'
+avrdude -p atmega1284p -c atmelice_isp -U flash:w:microvisor.hex -P usb -B4 -vvv -F
+make[1]: Leaving directory '/home/danny/bachelorsuv/apps/remote_attest'

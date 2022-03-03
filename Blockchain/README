@@ -1,0 +1,64 @@
+##
+## bring containers up
+
+docker-compose -f test.yml up --build --force-recreate
+
+
+# MQTT client on rest-api docker
+
+docker exec -it sawtooth-rest-api-default bash
+
+   Install necessary packages: 
+   apt update
+   apt-get install python3-requests
+   apt-get install python3-pip
+   python3 -m pip install paho-mqtt
+
+   move to /project/attestation_management/middlebox) and start the middlebox
+         - python3 Mqttc.py
+         
+         
+
+# login to admin client container, load systemconfig and devices DB
+ docker exec -it administrator-client bash
+
+administration.py  loadSystemConfig
+
+administration.py  loadDeviceDB 
+
+
+# login to mes container, and start testing
+
+ docker exec -it mes bash
+ docker device1 -it mes bash
+device1
+
+# if the mqtt lib is missing, install in the same way as in sawtooth-rest-api-default
+# check if device 073B has any pending request
+
+attmgr.py  checkRequest  073B
+
+# send a request query from device 098D , result will be 2 (request pending)
+
+attmgr.py  trustQuery   098D  073B   
+
+# check if device 073B has any pending request, result would be true with a blockID to be used as nonce
+
+attmgr.py  checkRequest  073B
+
+# submit a correct measurement with the received BlockID from last step
+
+attmgr.py  submitEvidence 073B 7A09AB47D4 d04615f64960b2de8af47ce44ab55f47d45b2fc36bc5dcac99b26a355b9755e278923097a285289a988e1232fae4ea0dfc59452dbe0608a28176565db4acdac3
+
+# send a request query from device 098D , result will be between 0 and 1 , trust score of the device
+
+attmgr.py  trustQuery   098D  073B   
+
+
+# get the last block ID and then submit a wrong  measurement 
+attmgr.py  submitEvidence 073B 7A09AB47D4 5639a2e0c43154602d12c25fbf6c6734d0d90a28e54db55b881585da677ba87a79447c4938586321783ae4ae2ae7a98b241ea08047be703dd644e7becda22936
+
+# send a request query from device 098D , result will be 3 , Device is not to be trusted as last measurement is wrong
+attmgr.py  trustQuery     073B 098D   
+
+
