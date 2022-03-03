@@ -1,4 +1,4 @@
-# scraps
+#  SCRAPS: Scalable Collective Remote Attestation for Pub-Sub IoT Networks with Untrusted Proxy Verifier
 
 ## Blockchain
 Implementation of Sawtooth blockchain, including smart contracts and 3 entities implemented also in containers, namely the administrator and 2 clients with roles of Verifer and Prover. The code is deployed using docker and docker-compose. 
