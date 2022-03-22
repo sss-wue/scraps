@@ -80,7 +80,7 @@ def _Compute_state(context, ProverID):
         addresses = context.set_state({storageAddress: state_data})
         if len(addresses) < 1:
             raise InternalError("State Error")
-        # return 2 confirm request is saved
+        # return 2 , confirm request is saved
         return 2
     else:
         devicestate = Devicestate_pb2.DeviceState()
@@ -89,8 +89,8 @@ def _Compute_state(context, ProverID):
         if devicestate.State == "untrusted":
             LOGGER.info('TrustQuery : device %s is untrusted ', ProverID)
             return 3
-        else :
-            return _calculate_Reliability(context , ProverID)
+        else:
+            return _calculate_Reliability(context, ProverID)
 
 
 
@@ -113,6 +113,9 @@ def _calculate_Reliability(context , ProverID):
         raise InvalidTransaction('Could not find properties attributes for evidence')
         # Calculate the evidence age
     BlockNum = block_info_functions.getBlockNumber(context, devicestate.LastEvidence)
+    if BlockNum == -1 :
+        _storeRequest(context, ProverID)
+        return 2
     Timestamp = block_info_functions.readBlockTime(context, BlockNum)
     x = _getTimeDifference(context, Timestamp)
     assert xmin <= xmax

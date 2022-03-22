@@ -77,7 +77,8 @@ def printAllBlockTimestamps(context):
         LOGGER.info('i: %s',
                 i)
 
-def getBlockNumber(context,BlockID):
+def getBlockNumber(context,block_id):
+    LOGGER.info('searching for block ID  %s', block_id)
     latestBlockNumber = readLastBlockNumber(context)
     i = latestBlockNumber
     while i > 1:
@@ -86,29 +87,31 @@ def getBlockNumber(context,BlockID):
         blockInfoEncoded = state_entries[0].data
         blockInfo = block_info_pb2.BlockInfo()
         blockInfo.ParseFromString(blockInfoEncoded)
-        if blockInfo.previous_block_id == BlockID:
-            LOGGER.info('getBlockNumber Block Number %s, for ID  %s', i , BlockID )
-            i = i -1
+        LOGGER.info('Checking Block ID %s, against ID  %s', blockInfo.previous_block_id, block_id)
+        if blockInfo.previous_block_id == block_id:
+            LOGGER.info('getBlockNumber Block Number %s, for ID  %s', i , block_id)
+
             return i
         i = i-1
     return 0
 
-def getBlockNumber(context,BlockID,Xmax):
+def getBlockNumber_maxed(context, block_id, xmax):
     latestBlockNumber = readLastBlockNumber(context)
     i = latestBlockNumber
-    time = readBlockTime(context, i)
+    #time = readBlockTime(context, i)
     currentTimestamp = readLastBlockTime(context)
     Time = 0
-    while (i > 1 & (Xmax>=Time) ) :
+    while (i > 1 & (xmax>=Time) ) :
         blockInfoAddress = '00b10c00' + hex(i)[2:].zfill(62)
         state_entries = context.get_state([blockInfoAddress])
         blockInfoEncoded = state_entries[0].data
         blockInfo = block_info_pb2.BlockInfo()
         blockInfo.ParseFromString(blockInfoEncoded)
-        if blockInfo.previous_block_id == BlockID:
-            LOGGER.info('getBlockNumber Block Number %s, for ID  %s', i , BlockID )
+        if blockInfo.previous_block_id == block_id:
+            LOGGER.info('Checking block  %s', blockInfo.previous_block_id)
+            LOGGER.info('getBlockNumber Block Number %s, for ID  %s', i, block_id )
             i = i -1
             return i
         i = i-1
         Time = currentTimestamp - readBlockTime(context, i)
-    return 0
+    return -1

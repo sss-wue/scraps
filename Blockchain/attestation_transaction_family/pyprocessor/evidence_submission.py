@@ -60,9 +60,9 @@ def handleEvidenceSubmission(context, encodedEvidence):
 
     meas_match = _validate_measurement(context, evidence)
     block_match = _validate_BlockID(context, evidence)
-    if meas_match & block_match:
+    if (meas_match and block_match):
             Result = "attested"
-            _storeEvidence(context, evidence, Result, storageAddress)
+            _storeEvidence(context, evidence.ProverIdentity, Result, evidence.BlockID)
             context.add_event(
                 event_type="attestation/evidence_submission",
                 attributes=[("prover", str(evidence.ProverIdentity)), ("result", str(Result)),
@@ -71,12 +71,22 @@ def handleEvidenceSubmission(context, encodedEvidence):
                 Result = "committed",
                 State = "attested"
             ).SerializeToString()
-
+            devicestate = Devicestate_pb2.DeviceState()
+            devicestate.DeviceIdentity = evidence.ProverIdentity
+            devicestate.State = "attested"
+            devicestate.Request = 0
+            state_data = devicestate.SerializeToString()
+            LOGGER.info('Deleting Flag Set for Device: %s', evidence.ProverIdentity)
+            addresses = context.set_state({storageAddress: state_data})
+            Result = "attested"
+            _storeEvidence(context, evidence.ProverIdentity, Result, evidence.BlockID)
+            if len(addresses) < 1:
+                raise InternalError("State Error")
             context.add_receipt_data(Response_SE)
     else:
-        if (not meas_match) & block_match:
+        if ((not meas_match) and block_match):
             Result = "valid"
-            _storeEvidence(context, evidence, Result, storageAddress)
+            _storeEvidence(context, evidence.ProverIdentity, Result, evidence.BlockID)
             context.add_event(
                 event_type="attestation/evidence_submission",
                 attributes=[("prover", str(evidence.ProverIdentity)), ("result", str(Result)),
@@ -85,6 +95,15 @@ def handleEvidenceSubmission(context, encodedEvidence):
                 Result="valid",
                 State="untrusted"
             ).SerializeToString()
+            devicestate = Devicestate_pb2.DeviceState()
+            devicestate.DeviceIdentity = evidence.ProverIdentity
+            devicestate.Request = 1
+            devicestate.State = "untrusted"
+            state_data = devicestate.SerializeToString()
+            LOGGER.info('Deleting Flag Set for Device: %s', evidence.ProverIdentity)
+            addresses = context.set_state({storageAddress: state_data})
+            if len(addresses) < 1:
+                raise InternalError("State Error")
 
             context.add_receipt_data(Response_SE)
 
@@ -124,7 +143,7 @@ def _validate_measurement(context, evidence):
         LOGGER.info('Devices List is empty')
     else:
         for Device in devicesList.Device:
-            if (evidence.ProverIdentity == Device.DeviceIdentity & evidence.Measurement == Device.Measurement):
+            if (evidence.ProverIdentity == Device.DeviceIdentity and evidence.Measurement == Device.Measurement):
                      LOGGER.info('Found a Matching Measurement :)')
                      return True
 
@@ -146,9 +165,10 @@ def _validate_BlockID(context, evidence):
     ### check if provided Block ID exists in the range of (current time - Xmax)
     ### No: return false
     ### Yes : check if it newer than the ID saved in last attestation
-    numEvidenceBlock = block_info_functions.getBlockNumber(context, evidence.BlockID, xmax)
+    numEvidenceBlock = block_info_functions.getBlockNumber_maxed(context, evidence.BlockID, xmax)
 
-    if numEvidenceBlock == 0:
+    if numEvidenceBlock == -1:
+        LOGGER.info('Block ID submitted in evidence is too old or does not exist')
         return False
     else:
     # retrieve block ID of last attestation
@@ -173,6 +193,7 @@ def _validate_BlockID(context, evidence):
                 #block_info_functions.printAllBlockTimestamps(context)
                 stroredBlockNumber = block_info_functions.getBlockNumber(context,devicestate.LastEvidence)
                 LOGGER.info('Number of stored block is  %s , Num of Block in submitted evidence is %s ', stroredBlockNumber, numEvidenceBlock )
+
                 old = block_info_functions.readBlockTime(context, stroredBlockNumber)
                 LOGGER.info('timestamp for old evidence  %s', old)
                 new = block_info_functions.readBlockTime(context, numEvidenceBlock)
@@ -191,13 +212,14 @@ def _validate_BlockID(context, evidence):
 ## if attested ==> set request to 0
 ## else ==> set request to 1
 
-def _storeEvidence(context,ProverID,new_state,BlockID):
-    LOGGER.info('Changing State for Device : %s to %s', ProverID, new_state)
-    storageAddress = address_calculator._assembleAddress(ProverID)
+
+def _storeEvidence(context, prover_id, new_state, block_id):
+    LOGGER.info('Changing State for Device : %s to %s', prover_id, new_state)
+    storageAddress = address_calculator._assembleAddress(prover_id)
     devicestate = Devicestate_pb2.DeviceState()
-    devicestate.DeviceIdentity = ProverID
+    devicestate.DeviceIdentity = prover_id
     devicestate.State = new_state
-    devicestate.LastEvidence = BlockID
+    devicestate.LastEvidence = block_id
 
     if new_state == "attested":
         devicestate.Request = 0

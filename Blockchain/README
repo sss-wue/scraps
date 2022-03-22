@@ -1,64 +1,102 @@
-##
-## bring containers up
 
-docker-compose -f test.yml up --build --force-recreate
-
-
-# MQTT client on rest-api docker
-
-docker exec -it sawtooth-rest-api-default bash
-
-   Install necessary packages: 
-   apt update
-   apt-get install python3-requests
-   apt-get install python3-pip
-   python3 -m pip install paho-mqtt
-
-   move to /project/attestation_management/middlebox) and start the middlebox
-         - python3 Mqttc.py
-         
-         
-
-# login to admin client container, load systemconfig and devices DB
- docker exec -it administrator-client bash
-
-administration.py  loadSystemConfig
-
-administration.py  loadDeviceDB 
+The directory contains the code needed to build the test network.
+It includes the necessary files to start Sawtooth hyperledger.
+Moreover, the implementation for Manufacture client, smart contracts, SCRAPS attestation client and smart contract.
 
 
-# login to mes container, and start testing
+# I. Requirements
+- docker
+- docker-compose
 
- docker exec -it mes bash
- docker device1 -it mes bash
-device1
+# II. How to use
+## 1. Build Network
 
-# if the mqtt lib is missing, install in the same way as in sawtooth-rest-api-default
-# check if device 073B has any pending request
+The network is composed of Sawtooth hyperledger, broker ,and different containers running the code for Manufacture client, and IoT devices.
+Administrator container hosts the code necessary to upload configuration information to the blockchain. It, furthermore runs the code for Manufacture client.
+mes container is used as a prover, while erp is used as a verifier.
+Manufacture and Blockchain communicate directly using http. Communication between IoT devices and blockchain is mediated by a broker.
 
-attmgr.py  checkRequest  073B
-
-# send a request query from device 098D , result will be 2 (request pending)
-
-attmgr.py  trustQuery   098D  073B   
-
-# check if device 073B has any pending request, result would be true with a blockID to be used as nonce
-
-attmgr.py  checkRequest  073B
-
-# submit a correct measurement with the received BlockID from last step
-
-attmgr.py  submitEvidence 073B 7A09AB47D4 d04615f64960b2de8af47ce44ab55f47d45b2fc36bc5dcac99b26a355b9755e278923097a285289a988e1232fae4ea0dfc59452dbe0608a28176565db4acdac3
-
-# send a request query from device 098D , result will be between 0 and 1 , trust score of the device
-
-attmgr.py  trustQuery   098D  073B   
+The network is built using the following command
 
 
-# get the last block ID and then submit a wrong  measurement 
-attmgr.py  submitEvidence 073B 7A09AB47D4 5639a2e0c43154602d12c25fbf6c6734d0d90a28e54db55b881585da677ba87a79447c4938586321783ae4ae2ae7a98b241ea08047be703dd644e7becda22936
+```console
+foo@bar:~$ docker-compose -f test.yml up
 
-# send a request query from device 098D , result will be 3 , Device is not to be trusted as last measurement is wrong
-attmgr.py  trustQuery     073B 098D   
+```
+The output is shown in the following picture. The console keeps printing log information submitted by different containers in the network
+
+![Blockchain](pictures/bc.png)
+
+## 2. System configuration:
+The next step is to upload the configuration information to Sawtooth. This task is executed from the administrator container.
+The following commands are used to login to admin client container (Manufacturer client), upload systemconfig and devices DB.
+
+```console
+foo@bar:~$ docker exec -it administrator-client bash
+foo@bar:~$ python3 administration.py  loadSystemConfig &&  python3 administration.py  loadDeviceDB 
+
+```
+The output shows how the transactions are submitted and the results of the execution of those transactions.
+![Manufacturer](pictures/admin.png)
+
+### b. Start MQTT client on rest-api docker
+
+As Sawtooth does not support MQTT, the next step is to run a MQTT middlebox on rest-api container.
+The task of the middlebox is to enable MQTT communication between IoT devices and the blockchain.
+The following commands are used to login to rest-api container and start the middleware.
 
 
+```console
+foo@bar:~$ docker exec -it sawtooth-rest-api-default bash
+foo@bar:~$ cd project/attestation_management/middlebox
+foo@bar:~$ python3 Mqttc.py
+```
+
+![Middlebox](pictures/mqtt.png)
+
+# 2. Attestation
+After the configuration of the network is finished, IoT devices (mes and erp containers) can start using the attestation service provided by the blockchain.
+In the following, mes container is used as a prover, while erp as verifier.
+## mes: Check for pending requests 
+Next commands are used tologin to mes (prover with ID 073B) container, and check if it has any pending request
+
+
+ ```console
+foo@bar:~$ docker exec -it mes bash
+foo@bar:~$ python3 attmgr.py  checkRequest  073B
+```
+As no other device queried the state of mes (073B), "AttestationRequired" has the value "False".
+![Check-Request](pictures/checkreq1.png)
+##  erp (verifier with ID 098D) queries state of mes 
+In this step, erp, acting as a prover, queries the blockchain for the state of mes.
+
+```console
+$ docker exec -it erp bash
+foo@bar:~$ python3 attmgr.py  trustQuery   098D  073B   
+```
+ The output shows the result of the query sent back from the blockchain. "TrustStatus" has the value 2
+ , which means attestation is pending. The attestation smart contract sets a flag for mes signaling that its attestation is required.
+![Middlebox](pictures/query1.png)
+
+## mes: check if any pending request,
+mes checks if any pending requests on the blockchain once again
+```console
+foo@bar:~$ python3 attmgr.py  checkRequest  073B
+```
+In the response, "AttestationRequired" has the value true. "timestamp" field includes the ID of last written block in the blockchain.
+![Check-Request2](pictures/checkreq1.png)
+## submit an evidence 
+mes uses the ID of the block received in the last check request operation, and submits a new evidence.
+```console
+foo@bar:~$ python3 attmgr.py  submitEvidence 073B 7A09AB47D4 688e115dcbe148cfadb12af421a028fab25e94586a6906fcfb4818172bedd49d7d07bb33722d179901534e2824ef64e43cd88b7fb4c11f93cf86258b05d0fb47
+```
+![Evidence](pictures/submit-evedence.png)
+## erp query blockchain for mes state 
+```console
+foo@bar:~$ python3 attmgr.py  trustQuery   098D  073B   
+```
+![Query2](pictures/query2.png)
+## Other cases:
+
+- If mes submits evidence with a wrong or old block ID, the result for erp querying the blockchain for its state will have 2 (pending) as a value for "TrustStatus"
+- if mes submits evidence with measurement different than the one saved in blockchain (7A09AB47D4), the result for erp querying the blockchain for its state will have 3 (untrusted) as a value for "TrustStatus"

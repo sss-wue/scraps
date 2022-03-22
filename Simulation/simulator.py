@@ -1,12 +1,12 @@
 import sys
 
-import matplotlib.pyplot as plt
+
 import networkx as nx
-import csv
+
 import time
-from threading import Thread
 import graph_search
 from random import randint
+
 
 def validate(evidences, query, timeFunction, minReliability):
     if evidences[query] is not None:
@@ -36,16 +36,21 @@ def validate(evidences, query, timeFunction, minReliability):
 
 
 if __name__ == '__main__':
-
+    minHit = 70
+    args = sys.argv[1:]
+    if(len(args) != 5):
+        print("Please provide args in following order: <systemType> <simType> <simRepetitions> <simDuration> <rate>")
+    systemType = args[0]
+    simType = args[1]
+    simRepetitions = int(args[2])
+    simulationDuration = int(args[3])
+    rate = int(args[4])
     G = nx.DiGraph()
-
     # initialization
-    # number of nodes:
-    n = 200
     # maximum searchdepth
     securityParameter = 6
 
-    minReliability = 0.0
+    minReliability = 0.80
 
     # timeFunction contains function, xmin, xmax
     # timeFunction = ['-0.005455*x + 1.05455', 10, 120]
@@ -76,103 +81,113 @@ if __name__ == '__main__':
     # timeFunction = ['-0.001666667*x + 2', 600, 1200]
     # timeFunction = ['0.003333333*x + 2', 300, 600]
 
-    args = sys.argv[1:]
-    nArray2 = [100,200,400,600, 800, 1000,2000,3000,4000, 5000,7500, 10000,15000,20000, 25000]
-    systemtype = args[1]
+    nArray = [100, 200, 400, 600, 800, 1000]
+    nArray2 = [2000, 3000, 4000, 5000, 7500, 10000, 15000, 20000, 25000]
 
-    # dictionary: prover -> (verifier, prover, timestamp)
     evidenceList = {}
-    simReps = 6
-    # simulation duration in seconds
-    simulationDuration = 1200
-    simulationSteps = 1000
-    # maximum number oft trustQueries per second
-    trustQueryRate = n / int(args[0])
 
     trustQueryHits = 0
     trustQueryMisses = 0
-
+    attestations = 0
     for i in range(0, 6):
-        n = nArray2[i]
-        trustQueryRate = n / 2
+        n = nArray[i]
+        # maximum number oft trustQueries per second
+        trustQueryRate = n / rate
+        evidence = [None] * n
         evidenceList = {}
-        for h in range(simReps):
-            smartAttestEvidence = [None] * n
-            for j in range(0, 999):
-                simulationStart = time.time()
-                lastSecond = time.time()
-                secondIterations = 0
-                while (time.time() < (simulationStart + simulationDuration)):
-                    # for i in range(0,simulationSteps):
+        pending = [None] * n
+        G.clear()
+        for j in range(0, simRepetitions):
 
-                    currentSecond = time.time()
-                    if (((currentSecond - lastSecond) < 1) and (secondIterations < trustQueryRate)):
-                        secondIterations += 1
+            simulationStart = time.time()
+            lastSecond = time.time()
+            secondIterations = 0
+            while time.time() < (simulationStart + simulationDuration):
+
+                currentSecond = time.time()
+                if ((currentSecond - lastSecond) < 1) and (secondIterations < trustQueryRate):
+                    secondIterations += 1
+                    verifier = randint(0, n - 1)
+                    prover = randint(0, n - 1)
+                    while verifier == prover:
                         verifier = randint(0, n - 1)
                         prover = randint(0, n - 1)
-                        while (verifier == prover):
-                            verifier = randint(0, n - 1)
-                            prover = randint(0, n - 1)
-                        if systemtype == "legiot":
-                            pathFound, finalRating, entryPoint, path = graph_search.findOptimalPath(prover, verifier,
-                                                                                                    securityParameter,
-                                                                                                    minReliability, evidenceList,
-                                                                                                    timeFunction)
-                        else:
-                            pathFound = validate(smartAttestEvidence, prover, timeFunction, minReliability)
-                            request = [prover,time.time()]
-                        if (pathFound):
-                            # print("A path was found! Verifier: " + str(verifier) + " Prover: " + str(prover) + " Path: " + str(path) + " Reliability: " + str(finalRating))
-                            trustQueryHits += 1
-                        else:
-                            # print("No path found! Verifier: " + str(verifier) + " Prover: " + str(prover) + " Entrypoint: " + str(entryPoint))
-                            trustQueryMisses += 1
-                            if systemtype == "legiot":
-                                newEntry = [verifier, entryPoint, time.time()]
-
-                                if ((entryPoint in evidenceList) == True):
-                                    tempList = evidenceList.get(entryPoint)
-                                    tempList.append(newEntry)
-                                    evidenceList[entryPoint] = tempList
-                                else:
-                                    newList = []
-                                    newList.append(newEntry)
-                                    evidenceList[entryPoint] = newList
+                    if systemType == "legiot":
+                        pathFound, finalRating, entryPoint, path = graph_search.findOptimalPath(prover, verifier,
+                                                                                                securityParameter,
+                                                                                                minReliability,
+                                                                                                evidenceList,
+                                                                                                timeFunction)
+                    else:
+                        pathFound = validate(evidence, prover, timeFunction, minReliability)
+                        entryPoint = None
+                    if pathFound:
+                        trustQueryHits += 1
+                    else:
+                        trustQueryMisses += 1
+                        newEntry = [verifier, entryPoint, time.time()]
+                        testEntry = [prover,time.time()]
+                        if systemType == "legiot":
+                            if entryPoint in evidenceList:
+                                tempList = evidenceList.get(entryPoint)
+                                tempList.append(newEntry)
+                                evidenceList[entryPoint] = tempList
                             else:
-                                smartAttestEvidence[request[0]] = request[1]
-
-                        # time.sleep((1/trustQueryRate))
-                    elif ((currentSecond - lastSecond) >= 1):
-                        lastSecond = currentSecond
-                        secondIterations = 0
-                    else:  # (secondIterations <= trustQueryRate):
-                        # sleep, trustQueryRate reached
-                        currentSecond = time.time()
-                        sleepTime = (1 - (currentSecond - lastSecond))
-                        time.sleep(sleepTime)
-                        # print ("Second Iterations: "+ str(secondIterations))
-                        # print("sleeping: " + str(sleepTime))
-
-                # build graph for plot
-
-                evidenceListLength = 0
-                for key, value in evidenceList.items():
-                    for evidence in value:
-                        G.add_edge(evidence[0], evidence[1])
-                        evidenceListLength += 1
-                if (trustQueryHits / (trustQueryHits + trustQueryMisses)) * 100 >= 70:
+                                newList = [newEntry]
+                                evidenceList[entryPoint] = newList
+                        else:
+                     
+                            evidence[testEntry[0]] = testEntry[1]
+                elif (currentSecond - lastSecond) >= 1:
+                    lastSecond = currentSecond
+                    secondIterations = 0
+                else:
+                    currentSecond = time.time()
+                    sleepTime = (1 - (currentSecond - lastSecond))
+                    time.sleep(sleepTime)
+            if simType == "run100":
+                if trustQueryMisses == 0:
                     print("Report -----------------------------------------------------------------")
-                    print("Actual Trust Query Rate:", (trustQueryHits + trustQueryMisses) / (time.time() - simulationStart))
-                    #print("Hits:", trustQueryHits)
-                    #print("Misses:", trustQueryMisses)
-                    print("HitPercentage:", (trustQueryHits / (trustQueryHits + trustQueryMisses)) * 100)
-                    print("Simulation Duration:", (time.time() - simulationStart))
-                    print("Iterations: ",j)
+                    print("Simulation type", systemType)
+                    print("Iterations: ", j)
+                    print("Number of Nodes:", n)
+                    print("Report -----------------------------------------------------------------")
+                    G.clear()
+                    break
+                elif j == simRepetitions - 1:
+                    print("Report -----------------------------------------------------------------")
+                    print("NO HITS")
+                    print("Simulation type", systemType)
+                    print("Iterations: ", j)
+                    print("Number of Nodes:", n)
                     print("Report -----------------------------------------------------------------")
                     break
-                    # print("All Evidences:", evidenceList)
-                    #print("numberOfEvidences:", evidenceListLength)
-                    # G.add_edge('a', 'b', timestamp = time.time())
-                trustQueryHits = 0
-                trustQueryMisses = 0
-    # securityParameter += 1
+                print(trustQueryHits+trustQueryMisses)
+                print("Iteration is finished !!! -----------------------------------------")
+            elif simType == "setup":
+                if trustQueryHits / (trustQueryHits + trustQueryMisses) * 100 >= minHit:
+                    print("Report -----------------------------------------------------------------")
+                    print("Simulation type", systemType)
+                    print("Number of Nodes:", n)
+                    print("Reached a minimum hitrate of %s in %s iterations: " % (minHit, j))
+                    print("Size of graph", len(G.edges))
+                    print("Report -----------------------------------------------------------------")
+                    G.clear()
+                    break
+            else:
+                print("Report -----------------------------------------------------------------")
+                print("Simulation type", systemType)
+                print("Number of Nodes:", n)
+                print("Security Parameter:", securityParameter)
+                print("Minimal Reliability:", minReliability)
+                print("Time Function:", timeFunction)
+                print("Simulation Duration:", simulationDuration)
+                print("Number of TrustQueries:", (trustQueryHits + trustQueryMisses))
+                print("Actual Trust Query Rate:", (trustQueryHits + trustQueryMisses) / (time.time() - simulationStart))
+                print("Hits:", trustQueryHits)
+                print("Misses:", trustQueryMisses)
+                print("HitPercentage:", (trustQueryHits / (trustQueryHits + trustQueryMisses)) * 100)
+                print("Simulation Duration:", (time.time() - simulationStart))
+                print("Report -----------------------------------------------------------------")
+            trustQueryHits = 0
+            trustQueryMisses = 0

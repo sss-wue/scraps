@@ -13,8 +13,7 @@
 # limitations under the License.
 # -----------------------------------------------------------------------------
 
-FROM ubuntu:bionic
-
+FROM ubuntu:xenial
 
 RUN \
  if [ ! -z $HTTP_PROXY ] && [ -z $http_proxy ]; then \
@@ -23,10 +22,8 @@ RUN \
  if [ ! -z $HTTPS_PROXY ] && [ -z $https_proxy ]; then \
   https_proxy=$HTTPS_PROXY; \
  fi; \
- apt-get update \  
- && apt-get install gnupg2 -y \
- && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD \
- && echo "deb [arch=amd64] http://repo.sawtooth.me/ubuntu/chime/stable bionic universe" >> /etc/apt/sources.list \
+ apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD \
+ && echo "deb [arch=amd64] http://repo.sawtooth.me/ubuntu/bumper/stable xenial universe" >> /etc/apt/sources.list \
  && apt-get update \
  && apt-get install -y -q \
     apt-transport-https \

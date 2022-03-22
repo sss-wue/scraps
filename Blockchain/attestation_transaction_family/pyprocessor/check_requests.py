@@ -42,8 +42,8 @@ def handleCheckRequest(context, payload, sender):
                 block_info_functions.readLastBlockID(context))), ("attestationRequired", str(True))])
     else:
         ResponseCR = response_CR_pb2.response_CR(
-            timestamp=str(0),
-            result = result
+            Timestamp=str(0),
+            Result = result
         ).SerializeToString()
         context.add_receipt_data(ResponseCR)
         context.add_event(

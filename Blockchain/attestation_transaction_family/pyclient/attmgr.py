@@ -127,7 +127,7 @@ def create_parser(prog_name):
 
 def CheckRequest(args):
     privkeyfile = _get_private_keyfile(KEY_NAME)
-    client = AttestationManagerClient(broker=broker,port=port, key_file=privkeyfile)
+    client = AttestationManagerClient(broker=broker,port=port, device_id=args.proverID, key_file=privkeyfile)
     queryBytes = buildCheckRequestPayload(args.proverID)
     response = client.submitCheckRequest(queryBytes)
     print("Check Request Result: {}".format(response))
@@ -136,7 +136,7 @@ def CheckRequest(args):
 def submit_evidence(args):
     '''Subcommand to submit an attestation evicende.  Calls client class to do submission.'''
     privkeyfile = _get_private_keyfile(KEY_NAME)
-    client = AttestationManagerClient(broker=broker,port=port, key_file=privkeyfile)
+    client = AttestationManagerClient(broker=broker,port=port, device_id=args.prvID, key_file=privkeyfile)
     encodedEvidence = buildEvidencePayload(args.prvID, args.measurement, args.BlockID)
     response = client.submitEvidence(encodedEvidence, args.prvID)
     print("Evidence Submission Result: {}".format(response))
@@ -146,7 +146,7 @@ def submit_evidence(args):
 # Command to handle a trust query from the command line
 def trustQuery(args):
     privkeyfile = _get_private_keyfile(KEY_NAME)
-    client = AttestationManagerClient(broker=broker,port=port, key_file=privkeyfile)
+    client = AttestationManagerClient(broker=broker,port=port, device_id=args.trustor, key_file=privkeyfile)
     queryBytes = buildTrustQueryPayload(args.trustor, args.trustee)
     response = client.submitTrustQuery(queryBytes)
     print("Trust Query Result: {}".format(response))
@@ -164,11 +164,11 @@ def buildEvidencePayload(prvID, measurement,blockID):
     return encodedEvidence
 
 # Builder method for the trust query object (protobuf)
-def buildTrustQueryPayload(trustor, trustee, minReliability):
+def buildTrustQueryPayload(trustor, trustee):
     trustQuery = trust_query_pb2.TrustQuery(
         Trustor = trustor,
         Trustee = trustee,
-        MinReliability = Decimal(minReliability)
+        #MinReliability = Decimal(minReliability)
     ).SerializeToString()
     return trustQuery
 
@@ -189,8 +189,8 @@ def _get_private_keyfile(key_name):
 def main(prog_name=os.path.basename(sys.argv[0]), args=None):
     '''Entry point function for the client CLI.'''
     print("commands examples:")
-    print("    submitEvidence 066B 073B")
-    print("    trustQuery 0794 073B 0.5")
+    print("    submitEvidence 066B 073BAV5O899  f110b....83b0d57")
+    print("    trustQuery 0794 073B")
     print("    CheckRequest 0794")
 
     try:

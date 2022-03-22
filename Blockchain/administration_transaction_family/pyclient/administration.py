@@ -134,9 +134,9 @@ def makeDevice(identity, TimeFunc, Measure, xmin, xmax,reliability):
         DeviceIdentity = identity,
         TimeFunction = TimeFunc,
         Measurement = Measure,
-        xmin = Decimal(xmin),
-        xmax = Decimal(xmax),
-        ReliabilityScore = Decimal(reliability)
+        xmin = float(xmin),
+        xmax = float(xmax),
+        ReliabilityScore = float(reliability)
     )
 
     return newDevice

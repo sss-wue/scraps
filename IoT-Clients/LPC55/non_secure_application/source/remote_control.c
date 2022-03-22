@@ -51,6 +51,8 @@
 #include "veneer_table.h"
 
 
+#include "tiny-json.h"
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -78,8 +80,8 @@ typedef struct
 /**
  * @brief The topic that the MQTT client both subscribes and publishes to.
  */
-#define ScriptionTopic         ( ( const uint8_t * ) "trustmgmt/073B" )
-#define PublishTopic         ( ( const uint8_t * )   "trustmgmt/batch" )
+#define ScriptionTopic         ( ( const uint8_t * ) "trustmngt/073B" )
+#define PublishTopic         ( ( const uint8_t * )   "trustmngt/Batch" )
 /*-----------------------------------------------------------*/
 
 /**
@@ -273,6 +275,7 @@ static MQTTBool_t prvMQTTCallback( void * pvUserData,
     char testmsg[1407];
     char * buf3 = "e8b77a30c1ad30c560ae5342edf8111ec6449b24758e19e910b488cc4b369970763add25241f5bb4737eff9d03698c70a4a1114ba9233a77ddf7257ba79237c3";
     submitEvidenceVeneer(&buf3,&testmsg,1407);
+    configPRINTF( ( "send evidence...\r\n" ) );
     prvPublish(&testmsg,1407);
     /* Returning eMQTTFalse tells the MQTT agent that the ownership
      * of the buffer containing the message lies with the agent and
@@ -307,8 +310,17 @@ static void prvMQTTConnectAndSubscribeTask( void * pvParameters )
     	 // char buf2[7] = {'t', 'r', 'u', 's', 't', 'e', 'e'};
 
     	  checkRequest(&testmsg,1407);
-    	  printf( "send check request...\r\n");
-    	  prvPublish(&testmsg,1407);
+
+    	  configPRINTF( ( "send check request...\r\n" ) );
+    	  enum { MAX_FIELDS = 8 };
+    	  json_t pool[ MAX_FIELDS ];
+
+    	  json_t const* message = json_create( testmsg, pool, MAX_FIELDS );
+          // if ( message == NULL ) return EXIT_FAILURE;
+    	  // prvPublish(&testmsg,1407);
+    	  configPRINTF( ( "2 send check request...\r\n" ) );
+    	  prvPublish(&message,1407);
+
     }
     /* MQTT client is now connected to a broker. Keep waiting
      * for the messages received from the broker. */

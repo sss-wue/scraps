@@ -23,7 +23,7 @@
 #include "cbor.h"
 #include "utils.h"
 #include "string.h"
-
+#include "tiny-json.h"
 
 
 struct AttestationManagerClient {

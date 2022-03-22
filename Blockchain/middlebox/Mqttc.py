@@ -158,6 +158,8 @@ class middlebox(object):
     def on_message_Batch(self,mosq, obj, msg):
         # m_decode = str(msg.payload.decode("utf-8", "ignore"))
         LOGGER.info('Batch received')
+        LOGGER.info(' %s.',msg)
+        
         m_decode = msg.payload.decode("utf-8", "ignore")
         m_in = json.loads(m_decode)  # decode json data
         Batch_list = m_in['batch_list']
@@ -169,7 +171,7 @@ class middlebox(object):
             result = _send_to_rest_api("batches",
                                        Batch_list,
                                        'application/octet-stream')
-            wait = 10
+            wait = 3
             output = _wait_for_status(Batch_ID, wait, result)
 
             print("result is:")

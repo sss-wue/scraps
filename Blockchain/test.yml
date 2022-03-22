@@ -194,14 +194,19 @@ services:
             --bind network:tcp://eth0:8800
       "
   rest-api:
-    image: hyperledger/sawtooth-rest-api:1.0
+    #image: hyperledger/sawtooth-rest-api:1.0
     container_name: sawtooth-rest-api-default
+    build:
+      context: .
+      dockerfile: ./rest-api/Dockerfile
     ports:
       - "8008:8008"
     depends_on:
       - validator
+    volumes:
+      - ".:/project/attestation_management/"
     entrypoint: sawtooth-rest-api -C tcp://validator:4004 --bind rest-api:8008
-    command: |
+    #command: bash -c "apt update && apt-get install python3-requests python3-pip && python3 -m pip install paho-mqtt" 
     #  bash -c "
      # python3-pip \
      # && pip3 install -U protobuf \
@@ -219,3 +224,12 @@ services:
         cp ~/.sawtooth/keys/* /project/attestation_management/keys/root_keys/ &&\
         tail -f /dev/null \
         \""
+  mqtt:
+      image: toke/mosquitto
+ #     network_mode: bridge
+      container_name: broker
+      expose:
+        - 1883
+      ports:
+        - 1883:1883
+      restart: unless-stopped

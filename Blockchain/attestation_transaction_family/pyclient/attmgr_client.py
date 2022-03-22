@@ -47,7 +47,7 @@ from sawtooth_sdk.protobuf.batch_pb2 import Batch
 LOGGER = logging.getLogger(__name__)
 
 # broker info
-trustmngt_topic="trustmgmt/073B"
+trustmngt_topic="trustmgmt/"
 
 # The Transaction Family Name
 FAMILY_NAME = 'attestation'
@@ -68,11 +68,13 @@ class AttestationManagerClient(object):
     Supports "submitEvidence" and "trustQuery" functions.
     '''
 
-    def __init__(self, broker, port, key_file=None):
+    def __init__(self, broker, port, device_id, key_file=None):
         '''Initialize the client class 
            Mainly getting the key pair and computing the address.
         '''
+        self.device_id = device_id
         self.client = paho.Client(device_id)
+        trustmngt_topic = "trustmgmt/" + device_id
         self.client.message_callback_add(trustmngt_topic, self.on_message)
         self.client.connect(broker, port)
         self.client.subscribe(trustmngt_topic,0)
@@ -286,7 +288,7 @@ class AttestationManagerClient(object):
         data['batch_list'] = str(batch_list.SerializeToString(), 'ISO-8859-1')
         data['batch_id'] = batch_id
         data['transaction_id']= transaction.header_signature
-        data['device_id']=device_id
+        data['device_id']= self.device_id
         self.TX_ID= transaction.header_signature
         json_data = json.dumps(data)
         self.client.publish("trustmngt/Batch", json_data)

@@ -378,8 +378,21 @@ uint8_t * _wrap_and_send(struct AttestationManagerClient client, char *action, i
 	printf("BatchList: %s\n", batch_list_buffer);
 
 	uint8_t *batch_id = batch_header_signature;
-	//char *json_data = buildJSON(batch_list_buffer, batch_list_length, batch_id, device_id);
+    //char *json_data = buildJSON(batch_list_buffer, batch_list_length, batch_id, device_id);
+	char str[]="";
+	//= "{ \"batch_list\":  batch_list_buffer , \"batch_id\": 32, \"transaction_id\": \"peter\", \"device_id\": 32 }";
 
+	strcpy(str, "{ \"batch_list\":");
+	strcat(str, &batch_list_buffer);
+	strcpy(str, " , \"batch_id\": ");
+	strcat(str, &batch_id);
+	strcpy(str, ", \"transaction_id\": ");
+	strcat(str, &transaction_header_signature);
+	strcpy(str, ", \"device_id\":");
+	strcat(str, &device_id);
+	strcpy(str, " }");
+
+	memcpy(batch_list_buffer, str, sizeof(str) );
 	free(hash_of_batch_header);
 	free(hash_of_transaction_header);
 	free(transaction_header_buffer);
@@ -388,12 +401,14 @@ uint8_t * _wrap_and_send(struct AttestationManagerClient client, char *action, i
 	free(batch_header_buffer);
 	free(batch_header_signature);
 	free(batch_buffer);
-    //free(batch_list_buffer);
+   // free(batch_list_buffer);
 	cbor_decref(&root);
 
 
 	printf("Stopping\n");
-	return batch_list_buffer;
+
+    return batch_list_buffer;
+
 }
 
 // small helper functions that prints data in hex to the serial port (e.g. 1 byte (ff) = 2 chars (FF))

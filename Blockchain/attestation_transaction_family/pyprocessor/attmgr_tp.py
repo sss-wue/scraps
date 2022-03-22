@@ -104,7 +104,7 @@ class AttestationTransactionHandler(TransactionHandler):
 
         # Call the appropriate module for a transaction
         if action == "submitEvidence":
-            evidence_submission.handleEvidenceSubmission(context, payload, sender)
+            evidence_submission.handleEvidenceSubmission(context, payload)
         elif action == "trustQuery":
             trust_query.handleTrustQuery(context, payload, sender)
         elif action == "checkRequest":

@@ -67,6 +67,7 @@ class AdministrationTransactionHandler(TransactionHandler):
            This is setting the "administration" TF namespace prefix.
         '''
         self._namespace_prefix = namespace_prefix
+        LOGGER.info("Starting administrator smart contract")
 
     @property
     def family_name(self):
