@@ -52,7 +52,7 @@ foo@bar:~$ cd project/attestation_management/middlebox
 foo@bar:~$ python3 Mqttc.py
 ```
 
-![Middlebox](pictures/mqtt.png)
+![Middlebox](./pictures/mqtt.png)
 
 # 2. Attestation
 After the configuration of the network is finished, IoT devices (mes and erp containers) can start using the attestation service provided by the blockchain.
