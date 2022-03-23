@@ -6,7 +6,7 @@
 - WIFI 10 Click 
 
 
-![Hardware](pictures/hardware.png)
+![Hardware](pictures/hardware.JPG)
 
 #### Software Requirements
 
