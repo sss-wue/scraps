@@ -9,6 +9,6 @@
 void load_image(uint8_t *page_buf, uint16_t offset);
 uint8_t verify_activate_image();
 void remote_attestation(uint8_t *n, uint8_t *sign);
-char * submit_request_new();
-char * submit_trust_query()
+void submit_request_new();
+void submit_trust_Query();
 #endif

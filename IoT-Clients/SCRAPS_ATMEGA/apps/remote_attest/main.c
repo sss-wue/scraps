@@ -109,12 +109,9 @@ int main(void) {
       
        // Do remote attest
        remote_attestation(buf, buf2);
-      // char *msg = submit_request_new();
-	//char *msg = submit_trust_query();
-	uart_putchar(msg[0]);
-	uart_putchar(msg[1]);
-	uart_putchar(msg[2]);
-	uart_putchar(msg[3]);
+       //submit_request_new();
+	uart_putchar("X");
+	uart_putchar("X");
        // Write signature
        for(i=0; i<64; i++) {
            uart_putchar(buf2[i]);

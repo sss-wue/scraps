@@ -318,31 +318,41 @@ remote_attestation(uint8_t *n, uint8_t *sign) {
   sreg = SREG;
   cli();
 
+  //SHA1Context ctx;
   uint8_t buff[SPM_PAGESIZE];
   uint32_t offset;
   uint8_t output2[32];
   uint8_t key[32];
-
+  /* Init sha1 context */
+ // SHA1Reset(&ctx);
+  sha256_ctx_t ctx;
+  sha256_init(&ctx);
   /* Hash full image */
+  
   offset = 0x00;
   while(offset < MEM_END) {
     read_page(buff, offset);
-    /* Run block through SHA-1, unroll loop */
-    sha256_nextBlock(&ctx, buff);
+    sha256_nextBlock(&ctx, buff + 0 * 64);
+    sha256_nextBlock(&ctx, buff + 1 * 64);
+    sha256_nextBlock(&ctx, buff + 2 * 64);
+    sha256_nextBlock(&ctx, buff + 3 * 64);
+
     /* Increment counter */
     offset += SPM_PAGESIZE;
   }
-   
-  sha256_ctx2hash(output2, &ctx);
+   sha256_ctx2hash(output2, &ctx);
+  /* Hash nonce */
+  
   /* Load safely stored private key into buff */
   load_key(key);
-
-  char *DEFAULT_URL = "http://localhost:8008";
   
-  submit_evidence("testblock","testID", output2, key, DEFAULT_URL);
+  char *DEFAULT_URL = "http://localhost:8008";
+  //submit_checkRequest("testID", key, DEFAULT_URL);
+  submit_evidence("testID", key, output2, key, DEFAULT_URL);
+  
   SREG = sreg;
 }
-BOOTLOADER_SECTION char *
+BOOTLOADER_SECTION void
 submit_request_new() {
 
   uint8_t sreg;
@@ -351,21 +361,19 @@ submit_request_new() {
   uint8_t key[32];
   load_key(key);
   char *DEFAULT_URL = "http://localhost:8008";
-  
+  submit_checkRequest("testID", key, DEFAULT_URL);
   SREG = sreg;
-  return submit_checkRequest("testID", key, DEFAULT_URL);
 }
-BOOTLOADER_SECTION char *
-submit_trust_query() {
 
+BOOTLOADER_SECTION void
+submit_trust_Query() {
   uint8_t sreg;
   sreg = SREG;
   cli();
   uint8_t key[32];
   load_key(key);
   char *DEFAULT_URL = "http://localhost:8008";
-  
+  submit_trustQuery("trustor", "trustee", 0.123, key, DEFAULT_URL);
   SREG = sreg;
-  return submit_trustQuery("trustor", "trustee", 0.123, key, DEFAULT_URL);
-}
 
+}
