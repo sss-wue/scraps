@@ -6,7 +6,8 @@
 - WIFI 10 Click 
 
 
-![Hardware](pictures/hardware.JPG)
+
+<img src="pictures/hardware.JPG" width="250" height="250">
 
 #### Software Requirements
 
