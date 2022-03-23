@@ -105,11 +105,7 @@ foo@bar:~$ python3 attmgr.py  trustQuery   098D  073B
 - if mes submits evidence with measurement different than the one saved in blockchain (7A09AB47D4), the result for erp querying the blockchain for its state will have 3 (untrusted) as a value for "TrustStatus"
 
 
-
-## IoT-Clients
-C implementation of IoT client in 2 boards (LPCXpresso55S69 + Mikroe WiFi 10 Click and Atmel MEGA-1284P Xplained). 
-
-## Simulation
+## Simulations
 
 This directory includes the code used in the simulations used for performance evaluation.
 "graph_search.py" is the implementation of the the graph search used in Legiot.
@@ -120,7 +116,7 @@ This directory includes the code used in the simulations used for performance ev
 $ pip3 install -r requirements.txt 
 
 ```
-### Simulations
+### Run Simulations
 To run the simulation use the following command:
 
 ```console
@@ -129,11 +125,11 @@ $ python3 simulator.py <systemType> <simType> <simRepetitions> <simDuration> <ra
 ```
 
 Parameters:
--	***systemType*** :  	  The system you want to simulate (legiot or scraps)
--	***simType*** : The type of simulation (setup (simulation of warmup phase), run100 (Iterations until 100% hit rate), hitrate, maxquery)
--	***simRepetitions*** : Repetitions of the simulation (usually 6) for run100 the maximum iterations must be defined here (usually 999)
--	***simDuration*** :    Duration each iteration of the simulation in seconds (1 for run 100 for others usually 1200)
--	***rate*** :            Defines the query rate (n/rate e.g rate 2 simulates the system with a query rate of n/2)
+-   ***systemType*** :        The system you want to simulate (legiot or scraps)
+-   ***simType*** : The type of simulation (setup (simulation of warmup phase), run100 (Iterations until 100% hit rate), hitrate, maxquery)
+-   ***simRepetitions*** : Repetitions of the simulation (usually 6) for run100 the maximum iterations must be defined here (usually 999)
+-   ***simDuration*** :    Duration each iteration of the simulation in seconds (1 for run 100 for others usually 1200)
+-   ***rate*** :            Defines the query rate (n/rate e.g rate 2 simulates the system with a query rate of n/2)
 
 
 #### Example:
@@ -143,3 +139,60 @@ $ python3 simulator.py  scraps hitrate 1 1 5
 ```
 The output is shown in the following picture.
 ![Simulation](Simulation/simulation.png)
+
+
+## IoT-Clients
+C implementation of IoT client in 2 boards (LPCXpresso55S69 + Mikroe WiFi 10 Click and Atmel MEGA-1284P Xplained). 
+
+### TrustZone-Based Attestation
+
+#### Hardware 
+
+- LPCXpresso55S69 
+- WIFI 10 Click 
+![Hardware](IoT-Clients/LPC55/pictures/hardware.png)
+
+#### Software Requirements
+
+- arm-none-eabi
+- MCUXpresso IDE v11.4.1 [Build 6260] [2021-09-15]
+- SDK_2.x_LPCXpresso55S69 [API version=2.0.0, Format version=3.8]
+![Software](IoT-Clients/LPC55/pictures/software.png)
+
+#### Setup
+
+- Import both application (secure and non secure) as projects in MCUXpresso
+- Check that projects are linked as shown in their setting in the following pictures
+- Set Wifi credentials on non_secure_application/freertos/demos/include/aws_clientcredential.h
+- Set broker topics under non_secure_application/source/remote_control.c 
+
+#### Example
+In this example, non_secure_application calls a function from the secure application (running in secure world), to generate a CheckRequest.
+The request is built in the secure world as a transaction, signed with the private key( also saved in the secure world). The non_secure_application sends it then to the blockchain using MQTT.
+
+
+### Microvisor-Based Attestation
+
+
+#### Hardware 
+- ATMega-1284P Xplained
+- Atmel ICE
+![Hardware](IoT-Clients/SCRAPS_ATMEGA/pictures/hardware.png)
+
+#### Software Requirements
+
+- avrdude 
+- avr toolchain
+
+#### Setup
+
+- change directory to IoT-Clients/SCRAPS-ATMEGA/apps/remote_attest
+    - Adjust the parameters in the Makefile (e.g. MCU, Frequency, flash, etc.)
+    - Run: make microvisor.hex from command line
+    - Run: make fuse4 from command line
+    - Run: make flash from command line
+    - Then, run the python script file verifier.py that serves as a verifier, attaching as parameters the hex file and the serial port of the attached MCU.
+
+
+
+
