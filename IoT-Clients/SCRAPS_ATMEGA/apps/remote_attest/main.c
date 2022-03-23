@@ -105,46 +105,24 @@ int main(void) {
                i++;
            }
        }
+       
+       last_char = uart_getchar();
+       if ( last_char == ',' ) {
+	submit_request_new();
+	}
+       else if ( last_char == ':') {
+	submit_trust_Query();
+	}
+	else {
+	remote_attestation(buf, buf2);
+	}
+       
+       for(i=0; i<3; i++){
+           uart_putchar(';');
+       }
+       
 
-      
-       // Do remote attest
-       remote_attestation(buf, buf2);
-       //submit_request_new();
-	uart_putchar("X");
-	uart_putchar("X");
-       // Write signature
-       for(i=0; i<64; i++) {
-           uart_putchar(buf2[i]);
-       }
-       
-       uart_putchar(';');
-       uart_putchar(';');
-       
-       // Write memory/nonce hash
-       for(i=0; i<20; i++){
-           uart_putchar(buf[i]);
-       }
-       
-       uart_putchar(';');
-       uart_putchar(';');
-       
-       // Write nonces one by one as the final argument. Separate them with ','
 
-       node_t *curr = list;
-       while(curr->next != NULL) {
-           for(i=0; i<NONCELEN; i++) {
-               uart_putchar(curr->val[i]);
-           }
-           
-           uart_putchar(',');
-           
-           curr = curr->next;
-       }
-       for(i=0; i<NONCELEN; i++) {
-           uart_putchar(curr->val[i]);
-       }
-       
-       uart_putchar('.');
-       uart_putchar('.');
+
    }
 }
