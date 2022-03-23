@@ -1,4 +1,4 @@
-### Microvisor-Based Attestation
+### SμV-Based Attestation
 
 
 #### Hardware 
@@ -19,4 +19,3 @@
     - Run: make microvisor.hex from command line
     - Run: make fuse4 from command line
     - Run: make flash from command line
-    - Then, run the python script file verifier.py that serves as a verifier, attaching as parameters the hex file and the serial port of the attached MCU.
