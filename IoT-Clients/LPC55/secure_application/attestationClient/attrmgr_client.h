@@ -25,6 +25,10 @@
 #include "string.h"
 #include "tiny-json.h"
 
+#include "pb_encode.h"
+#include "pb_decode.h"
+
+
 
 struct AttestationManagerClient {
 	//priv key for now

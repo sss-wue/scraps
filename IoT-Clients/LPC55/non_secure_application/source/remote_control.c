@@ -42,12 +42,8 @@
 /* Required to get the broker address and port. */
 #include "aws_clientcredential.h"
 #include "queue.h"
-
-
 #include "iot_init.h"
-
 #include "board.h"
-
 #include "veneer_table.h"
 
 
@@ -133,6 +129,8 @@ static BaseType_t prvPublish( char *, int len) ;
 static MQTTAgentHandle_t xMQTTHandle = NULL;
 
 /*-----------------------------------------------------------*/
+
+
 
 static BaseType_t prvCreateClientAndConnectToBroker( void )
 {
@@ -292,6 +290,7 @@ static void prvMQTTConnectAndSubscribeTask( void * pvParameters )
     BaseType_t xReturned;
     const TickType_t xFiveSeconds = pdMS_TO_TICKS( 5000UL );
 
+
     /* Avoid compiler warnings about unused parameters. */
     ( void ) pvParameters;
 
@@ -309,17 +308,12 @@ static void prvMQTTConnectAndSubscribeTask( void * pvParameters )
     	 // char buf[7] = {'t', 'r', 'u', 's', 't', 'o', 'r'};
     	 // char buf2[7] = {'t', 'r', 'u', 's', 't', 'e', 'e'};
 
+    	  configPRINTF( ( "Generate CheckRequest...\r\n" ) );
     	  checkRequest(&testmsg,1407);
+    	  configPRINTF( ( "CheckRequest generated...\r\n" ) );
+    	  prvPublish(&testmsg,1407);
+    	  configPRINTF( ( "CheckRequest sent...\r\n" ) );
 
-    	  configPRINTF( ( "send check request...\r\n" ) );
-    	  enum { MAX_FIELDS = 8 };
-    	  json_t pool[ MAX_FIELDS ];
-
-    	  json_t const* message = json_create( testmsg, pool, MAX_FIELDS );
-          // if ( message == NULL ) return EXIT_FAILURE;
-    	  // prvPublish(&testmsg,1407);
-    	  configPRINTF( ( "2 send check request...\r\n" ) );
-    	  prvPublish(&message,1407);
 
     }
     /* MQTT client is now connected to a broker. Keep waiting

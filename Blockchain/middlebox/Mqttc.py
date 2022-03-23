@@ -161,7 +161,9 @@ class middlebox(object):
         LOGGER.info(' %s.',msg)
         
         m_decode = msg.payload.decode("utf-8", "ignore")
+        LOGGER.info(' %s.',m_decode)
         m_in = json.loads(m_decode)  # decode json data
+        LOGGER.info(' %s.',m_in)
         Batch_list = m_in['batch_list']
         Batch_ID = m_in['batch_id']
         Device_ID = m_in['device_id']

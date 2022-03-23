@@ -55,13 +55,13 @@
  *
  * @todo If you are using Wi-Fi, set this to your network name.
  */
-#define clientcredentialWIFI_SSID                    "WLAN-586967"
+#define clientcredentialWIFI_SSID                    "xxxxxxx"
 
 /*
  * @brief Password needed to join Wi-Fi network.
  * @todo If you are using WPA, set this to your network password.
  */
-#define clientcredentialWIFI_PASSWORD                "64993057762559119145"
+#define clientcredentialWIFI_PASSWORD                "xxxxxxxx"
 
 /*
  * @brief Wi-Fi network security type.

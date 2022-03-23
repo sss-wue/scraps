@@ -357,6 +357,7 @@ uint8_t * _wrap_and_send(struct AttestationManagerClient client, char *action, i
 
 	BatchList batch_list = BATCH_LIST__INIT;
 	uint8_t *batch_list_buffer;
+	//uint8_t *batch_list_buffer;
 	size_t batch_list_length;
 
 	Batch *batche;
@@ -379,20 +380,49 @@ uint8_t * _wrap_and_send(struct AttestationManagerClient client, char *action, i
 
 	uint8_t *batch_id = batch_header_signature;
     //char *json_data = buildJSON(batch_list_buffer, batch_list_length, batch_id, device_id);
-	char str[]="";
+	//char str[2800];
 	//= "{ \"batch_list\":  batch_list_buffer , \"batch_id\": 32, \"transaction_id\": \"peter\", \"device_id\": 32 }";
 
-	strcpy(str, "{ \"batch_list\":");
-	strcat(str, &batch_list_buffer);
-	strcpy(str, " , \"batch_id\": ");
-	strcat(str, &batch_id);
-	strcpy(str, ", \"transaction_id\": ");
-	strcat(str, &transaction_header_signature);
-	strcpy(str, ", \"device_id\":");
-	strcat(str, &device_id);
-	strcpy(str, " }");
+//	strcpy(str, "{ \"batch_list\":");
+//	strcat(str, &batch_list_buffer);
+//	strcpy(str, " , \"batch_id\": ");
+//	strcat(str, &batch_id);
+//	strcpy(str, ", \"transaction_id\": ");
+//	strcat(str, &transaction_header_signature);
+//	strcpy(str, ", \"device_id\":");
+//	strcat(str, device_id);
+//	strcpy(str, " }");
+//    char * list = (char*) batch_list_buffer;
+//	strcpy(str, "{\n"
+//			"\t\"batch_list\": \"");
+//	strcat(str, list);
+//	strcat(str, "\",\n"
+//			"\t\"batch_id\": \"");
+//	strcat(str, batch_id);
+//	strcat(str, "\",\n"
+//			"\t\"transaction_id\": \"");
+//	strcat(str, transaction_header_signature);
+//	strcat(str, "\",\n"
+//			"\t\"device_id\": \"");
+//	strcat(str, device_id);
+//	strcat(str, " \" }\n");
+//	strcat(str,"\0");
 
-	memcpy(batch_list_buffer, str, sizeof(str) );
+//	strcpy(str, " }");
+//	strcat(str, &device_id);
+//	strcpy(str, ", \"device_id\":");
+//	strcat(str, &transaction_header_signature);
+//	strcpy(str, ", \"transaction_id\": ");
+//	strcat(str, &batch_id);
+//	strcpy(str, " , \"batch_id\": ");
+//	strcat(str, &batch_list_buffer);
+//	strcpy(str, "{ \"batch_list\":");
+
+	//memcpy(batch_list_buffer, str, sizeof(str) );
+
+//	strcpy(batch_list_buffer, str);
+
+
 	free(hash_of_batch_header);
 	free(hash_of_transaction_header);
 	free(transaction_header_buffer);
@@ -403,11 +433,10 @@ uint8_t * _wrap_and_send(struct AttestationManagerClient client, char *action, i
 	free(batch_buffer);
    // free(batch_list_buffer);
 	cbor_decref(&root);
-
-
+	//pb_ostream_t stream = pb_ostream_from_buffer(batch_list_buffer, sizeof(batch_list_buffer));
+	//pb_encode(&stream, &batch_list__descriptor, &batch_list);
 	printf("Stopping\n");
-
-    return batch_list_buffer;
+	return batch_list_buffer;
 
 }
 

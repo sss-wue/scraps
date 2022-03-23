@@ -66,7 +66,8 @@ uint8_t* buildEvidencePayload(uint8_t *blockID, int *size) {
 	attest(&hash);
 	evidence.blockid = blockID;
 	evidence.proveridentity = prvID;
-	evidence.measurement = hash;
+	evidence.proveridentity = "measurement";
+	//evidence.measurement = (char *)hash;
 	length = evidence__get_packed_size(&evidence);
 
 	buffer = malloc(length);
