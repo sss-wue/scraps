@@ -35,7 +35,7 @@ RUN \
 	python3-cbor \
 	python3-pip \
  && apt-get clean \
- && pip3 install -U protobuf \
+ && pip3 install -U protobuf==3.6.0 \
  && python3 -m pip install paho-mqtt \
  && rm -rf /var/lib/apt/lists/*
 
